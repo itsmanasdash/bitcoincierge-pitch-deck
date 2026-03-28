@@ -32,28 +32,148 @@
 
 const pptxgen = require("pptxgenjs");
 const path    = require("path");
+const fs      = require("fs");
 const IMGS    = require("../assets/images_b64.js");
 
-// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
-const C = {
-  cream:     "FAF9F6",
-  black:     "111111",
-  darkPanel: "1A1A1A",
-  orange:    "F26522",
-  orangeDk:  "D54E10",
-  white:     "FFFFFF",
-  gray500:   "6B7280",
-  gray700:   "374151",
-  gray900:   "111827",
-  red:       "DC2626",
-  blue:      "3B82F6",
-  green:     "10B981",
-  purple:    "8B5CF6",
-  pink:      "EC4899",
-  teal:      "14B8A6",
+// ─── THEMES ──────────────────────────────────────────────────────────────────
+const THEMES = {
+  "dark-bitcoin": {
+    name: "Dark Bitcoin",
+    bgDark:    "111111",
+    bgLight:   "FAF9F6",
+    bgPanel:   "1A1A1A",
+    bgPanelDk: "0F0F0F",   // deeper dark panel (cards on dark slides)
+    bgCard:    "FFFFFF",
+    bgCardBorder: "E5E7EB",
+    panelBorder:  "2A2A2A",   // border on dark panel cards
+    separator:    "333333",   // thin divider line
+    accent:    "F26522",
+    accentDk:  "D54E10",
+    textOnDark:  "FFFFFF",
+    textOnLight: "111827",
+    textMuted:   "6B7280",
+    textSubtle:  "374151",
+    red:   "DC2626",
+    blue:  "3B82F6",
+    green: "10B981",
+    purple:"8B5CF6",
+    pink:  "EC4899",
+    teal:  "14B8A6",
+  },
+  "white-orange": {
+    name: "White & Orange",
+    bgDark:    "FFFFFF",
+    bgLight:   "FFF7F0",
+    bgPanel:   "FEF0E6",
+    bgPanelDk: "FCE8D5",   // warm light card on white slides
+    bgCard:    "FFFFFF",
+    bgCardBorder: "FDDAB5",
+    panelBorder:  "F5C49A",   // warm orange border
+    separator:    "FDDAB5",   // warm divider
+    accent:    "F26522",
+    accentDk:  "D54E10",
+    textOnDark:  "1A1A1A",
+    textOnLight: "1A1A1A",
+    textMuted:   "8C5A3A",
+    textSubtle:  "5C3A20",
+    red:   "DC2626",
+    blue:  "1D4ED8",
+    green: "15803D",
+    purple:"7C3AED",
+    pink:  "DB2777",
+    teal:  "0F766E",
+  },
+  "navy-blue": {
+    name: "Navy & Gold",
+    bgDark:    "0F172A",
+    bgLight:   "F0F4FF",
+    bgPanel:   "1E293B",
+    bgPanelDk: "0F172A",
+    bgCard:    "FFFFFF",
+    bgCardBorder: "CBD5E1",
+    panelBorder:  "334155",
+    separator:    "1E293B",
+    accent:    "F59E0B",
+    accentDk:  "D97706",
+    textOnDark:  "F1F5F9",
+    textOnLight: "0F172A",
+    textMuted:   "64748B",
+    textSubtle:  "334155",
+    red:   "EF4444",
+    blue:  "3B82F6",
+    green: "10B981",
+    purple:"8B5CF6",
+    pink:  "EC4899",
+    teal:  "14B8A6",
+  },
+  "green-bitcoin": {
+    name: "Forest Green",
+    bgDark:    "0D1F1A",
+    bgLight:   "F0FDF4",
+    bgPanel:   "14291F",
+    bgPanelDk: "0D1F1A",
+    bgCard:    "FFFFFF",
+    bgCardBorder: "BBF7D0",
+    panelBorder:  "166534",
+    separator:    "14532D",
+    accent:    "16A34A",
+    accentDk:  "15803D",
+    textOnDark:  "ECFDF5",
+    textOnLight: "052E16",
+    textMuted:   "6B7280",
+    textSubtle:  "374151",
+    red:   "DC2626",
+    blue:  "3B82F6",
+    green: "16A34A",
+    purple:"8B5CF6",
+    pink:  "EC4899",
+    teal:  "14B8A6",
+  },
 };
 
+// ─── LOAD ACTIVE THEME ───────────────────────────────────────────────────────
+function loadTheme() {
+  var themePath = path.join(__dirname, "..", "theme.json");
+  var themeKey = "dark-bitcoin";
+  try {
+    if (fs.existsSync(themePath)) {
+      var saved = JSON.parse(fs.readFileSync(themePath, "utf8"));
+      if (saved.theme && THEMES[saved.theme]) themeKey = saved.theme;
+    }
+  } catch (e) { /* ignore */ }
+  return THEMES[themeKey];
+}
+
+
+
+// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
+// C is populated from the active theme so every function reads it correctly.
+var T = loadTheme();
+const C = {
+  cream:        T.bgLight,
+  black:        T.bgDark,
+  darkPanel:    T.bgPanel,
+  panelDk:      T.bgPanelDk,   // deeper dark-slide card fill
+  panelBorder:  T.panelBorder, // border on dark-slide cards
+  separator:    T.separator,   // thin divider line
+  orange:       T.accent,
+  orangeDk:     T.accentDk,
+  white:        T.bgCard,      // card / shape fill — always a fill color, not text
+  onDark:       T.textOnDark,  // text sitting on a dark-background slide
+  gray500:      T.textMuted,
+  gray700:      T.textSubtle,
+  gray900:      T.textOnLight,
+  red:          T.red,
+  blue:         T.blue,
+  green:        T.green,
+  purple:       T.purple,
+  pink:         T.pink,
+  teal:         T.teal,
+};
+
+
 const F = { serif: "Georgia", sans: "Calibri" };
+
 
 // Brand color legend for Proof of Work slide
 const BRAND_COLORS = {
@@ -78,16 +198,18 @@ function addHeadline(s, text, opts) {
   var y    = (opts && opts.y     != null) ? opts.y     : 0.68;
   var h    = (opts && opts.h     != null) ? opts.h     : 1.35;
   var size = (opts && opts.size  != null) ? opts.size  : 36;
-  var col  = (opts && opts.color != null) ? opts.color : C.black;
+  // Default to gray900 (textOnLight) so it's always readable on light slides;
+  // callers on dark slides must pass an explicit color if needed.
+  var col  = (opts && opts.color != null) ? opts.color : C.gray900;
   s.addShape("rect", { x: 0.45, y: y, w: 0.055, h: h, fill: { color: C.orange } });
   s.addText(text, { x: 0.65, y: y, w: 8.8, h: h,
     fontFace: F.serif, fontSize: size, italic: true,
     color: col, align: "left", margin: 0 });
 }
 function addLightFooter(s) {
-  s.addShape("rect", { x: 0, y: 5.45, w: 10, h: 0.18, fill: { color: "EDEBE6" } });
+  s.addShape("rect", { x: 0, y: 5.45, w: 10, h: 0.18, fill: { color: C.cream } });
   s.addText("bitcoincierge.in", { x: 0.5, y: 5.46, w: 9, h: 0.16,
-    fontFace: F.sans, fontSize: 7.5, color: "AAAAAA", align: "left", margin: 0 });
+    fontFace: F.sans, fontSize: 7.5, color: C.gray500, align: "left", margin: 0 });
 }
 function addDarkFooter(s) {
   s.addText("bitcoincierge.in", { x: 0.5, y: 5.35, w: 9, h: 0.22,
@@ -141,7 +263,7 @@ function slide01_AudienceQuestion(pres) {
   // Big centered question
   s.addText("Building or planning\na Bitcoin startup?", {
     x: 0.6, y: 1.0, w: 8.8, h: 2.4,
-    fontFace: F.serif, fontSize: 56, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 56, italic: true, color: C.onDark,
     align: "left", margin: 0,
   });
 
@@ -154,7 +276,7 @@ function slide01_AudienceQuestion(pres) {
 
   s.addText("Boy! You've chosen an interesting problem for yourself.", {
     x: 0.6, y: 4.45, w: 8, h: 0.4,
-    fontFace: F.sans, fontSize: 12, color: "666666",
+    fontFace: F.sans, fontSize: 12, color: C.gray500,
     align: "left", margin: 0, italic: true,
   });
 }
@@ -172,14 +294,14 @@ function slide02_BossBattle(pres) {
   // "YOU CHOSE..." small text
   s.addText("C O N G R A T U L A T I O N S .   Y O U   C H O S E . . .", {
     x: 0.5, y: 0.55, w: 9, h: 0.3,
-    fontFace: F.sans, fontSize: 10, bold: true, color: "666666",
+    fontFace: F.sans, fontSize: 10, bold: true, color: C.gray500,
     charSpacing: 2, align: "center", margin: 0,
   });
 
   // "THE HARDEST" in huge white
   s.addText("THE HARDEST", {
     x: 0.3, y: 0.95, w: 9.4, h: 1.1,
-    fontFace: F.serif, fontSize: 56, bold: true, color: C.white,
+    fontFace: F.serif, fontSize: 56, bold: true, color: C.onDark,
     align: "center", margin: 0,
   });
 
@@ -193,20 +315,20 @@ function slide02_BossBattle(pres) {
   // Difficulty bar
   s.addText("Difficulty Level:", {
     x: 2.5, y: 3.65, w: 3, h: 0.35,
-    fontFace: F.sans, fontSize: 13, color: "888888", align: "right", margin: 0,
+    fontFace: F.sans, fontSize: 13, color: C.gray500, align: "right", margin: 0,
   });
   // Orange filled blocks
   s.addShape("rect", { x: 5.65, y: 3.72, w: 2.2, h: 0.22, fill: { color: C.orange } });
   s.addText("500%", {
     x: 5.7, y: 3.72, w: 2.1, h: 0.22,
-    fontFace: F.sans, fontSize: 12, bold: true, color: C.white,
+    fontFace: F.sans, fontSize: 12, bold: true, color: C.onDark,
     align: "center", valign: "middle", margin: 0,
   });
 
   // Subtext
   s.addText("Customers don't care. Marketing doesn't work. Distribution is broken.", {
     x: 0.5, y: 4.25, w: 9, h: 0.35,
-    fontFace: F.sans, fontSize: 11, color: "555555", italic: true,
+    fontFace: F.sans, fontSize: 11, color: C.gray500, italic: true,
     align: "center", margin: 0,
   });
 }
@@ -238,12 +360,12 @@ function slide03_ExBitcoiners(pres) {
   // Bottom punchline
   s.addText("Came for the bull. Clocked out for the bear.", {
     x: 0.5, y: 4.65, w: 9, h: 0.42,
-    fontFace: F.serif, fontSize: 18, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 18, italic: true, color: C.onDark,
     align: "center", margin: 0,
   });
   s.addText("Many bitcoiners stop caring in the bear cycle — which we are in.", {
     x: 0.5, y: 5.1, w: 9, h: 0.28,
-    fontFace: F.sans, fontSize: 10, color: "AAAAAA",
+    fontFace: F.sans, fontSize: 10, color: C.gray500,
     align: "center", margin: 0,
   });
 }
@@ -273,7 +395,7 @@ function slide04_Normies(pres) {
     fill: { color: C.black } });
   s.addText("The other 1.4 billion Indians? They've never thought about Bitcoin. Not once.", {
     x: 0.5, y: 5.0, w: 9, h: 0.38,
-    fontFace: F.serif, fontSize: 16, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 16, italic: true, color: C.onDark,
     align: "center", margin: 0,
   });
 }
@@ -290,13 +412,13 @@ function slide05a_AdsCompliance(pres) {
   // Big label: "RUN ADS?"
   s.addText("Want to run Bitcoin ads?", {
     x: 0.5, y: 0.55, w: 9, h: 0.65,
-    fontFace: F.serif, fontSize: 32, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 32, italic: true, color: C.onDark,
     align: "center", margin: 0,
   });
 
   // Giant REJECTED in red
   s.addShape("rect", { x: 1.8, y: 1.35, w: 6.4, h: 1.55,
-    fill: { color: "1A0000" }, line: { color: C.red, width: 5 } });
+    fill: { color: C.panelDk }, line: { color: C.red, width: 5 } });
   s.addText("REJECTED.", {
     x: 1.8, y: 1.35, w: 6.4, h: 1.55,
     fontFace: F.serif, fontSize: 72, bold: true, color: C.red,
@@ -312,13 +434,13 @@ function slide05a_AdsCompliance(pres) {
   platforms.forEach(function(p, i) {
     var py = 3.12 + i * 0.55;
     s.addShape("rect", { x: 0.5, y: py, w: 9.0, h: 0.45,
-      fill: { color: "1A1A1A" }, line: { color: "333333", width: 0.5 } });
+      fill: { color: C.darkPanel }, line: { color: C.separator, width: 0.5 } });
     s.addText("✕", { x: 0.65, y: py + 0.07, w: 0.3, h: 0.3,
       fontFace: F.sans, fontSize: 12, bold: true, color: C.red, margin: 0 });
     s.addText(p.name, { x: 1.05, y: py + 0.07, w: 2.5, h: 0.3,
-      fontFace: F.sans, fontSize: 10, bold: true, color: C.white, margin: 0 });
+      fontFace: F.sans, fontSize: 10, bold: true, color: C.onDark, margin: 0 });
     s.addText(p.note, { x: 3.7, y: py + 0.07, w: 5.7, h: 0.3,
-      fontFace: F.sans, fontSize: 9.5, color: "888888", margin: 0 });
+      fontFace: F.sans, fontSize: 9.5, color: C.gray500, margin: 0 });
   });
 }
 
@@ -333,7 +455,7 @@ function slide05b_SocialFatigue(pres) {
 
   s.addText("Go organic? 📱", {
     x: 0.5, y: 0.52, w: 9, h: 0.7,
-    fontFace: F.serif, fontSize: 36, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 36, italic: true, color: C.onDark,
     align: "center", margin: 0,
   });
 
@@ -346,15 +468,15 @@ function slide05b_SocialFatigue(pres) {
   problems.forEach(function(p, i) {
     var px = 0.4 + i * 3.1;
     s.addShape("rect", { x: px, y: 1.45, w: 2.95, h: 3.5,
-      fill: { color: "0F0F0F" }, line: { color: "2A2A2A", width: 1 } });
+      fill: { color: C.panelDk }, line: { color: C.panelBorder, width: 1 } });
     s.addShape("rect", { x: px, y: 1.45, w: 2.95, h: 0.055,
       fill: { color: C.red } });
     s.addText(p.emoji, { x: px + 0.2, y: 1.65, w: 0.7, h: 0.7,
       fontFace: F.sans, fontSize: 28, margin: 0 });
     s.addText(p.big, { x: px + 0.2, y: 2.45, w: 2.6, h: 0.5,
-      fontFace: F.sans, fontSize: 18, bold: true, color: C.white, margin: 0 });
+      fontFace: F.sans, fontSize: 18, bold: true, color: C.onDark, margin: 0 });
     s.addText(p.sub, { x: px + 0.2, y: 3.0, w: 2.6, h: 1.8,
-      fontFace: F.sans, fontSize: 9.5, color: "888888", margin: 0 });
+      fontFace: F.sans, fontSize: 9.5, color: C.gray500, margin: 0 });
   });
 }
 
@@ -369,7 +491,7 @@ function slide05c_Conferences(pres) {
 
   s.addText("Pay to play? 💸", {
     x: 0.5, y: 0.52, w: 9, h: 0.7,
-    fontFace: F.serif, fontSize: 36, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 36, italic: true, color: C.onDark,
     align: "center", margin: 0,
   });
 
@@ -395,21 +517,21 @@ function slide05c_Conferences(pres) {
   opts.forEach(function(o, i) {
     var ox = 0.5 + i * 4.85;
     s.addShape("rect", { x: ox, y: 1.42, w: 4.6, h: 3.65,
-      fill: { color: "0F0F0F" }, line: { color: "2A2A2A", width: 1 } });
+      fill: { color: C.panelDk }, line: { color: C.panelBorder, width: 1 } });
     s.addShape("rect", { x: ox, y: 1.42, w: 4.6, h: 0.055,
       fill: { color: C.red } });
     s.addText(o.icon, { x: ox + 0.25, y: 1.6, w: 0.7, h: 0.65,
       fontFace: F.sans, fontSize: 26, margin: 0 });
     s.addText(o.head, { x: ox + 0.25, y: 2.38, w: 4.1, h: 0.42,
-      fontFace: F.sans, fontSize: 13, bold: true, color: C.white, margin: 0 });
+      fontFace: F.sans, fontSize: 13, bold: true, color: C.onDark, margin: 0 });
     s.addText(o.price, { x: ox + 0.25, y: 2.85, w: 4.1, h: 0.72,
       fontFace: F.serif, fontSize: 36, italic: true, color: C.orange, margin: 0 });
     s.addText(o.priceLabel, { x: ox + 0.25, y: 3.58, w: 4.1, h: 0.3,
-      fontFace: F.sans, fontSize: 9, color: "777777", margin: 0 });
+      fontFace: F.sans, fontSize: 9, color: C.gray700, margin: 0 });
     s.addText(o.who, { x: ox + 0.25, y: 3.92, w: 4.1, h: 0.28,
-      fontFace: F.sans, fontSize: 9, bold: true, color: "666666", margin: 0 });
+      fontFace: F.sans, fontSize: 9, bold: true, color: C.gray500, margin: 0 });
     s.addShape("rect", { x: ox + 0.25, y: 4.28, w: 4.1, h: 0.05,
-      fill: { color: "333333" } });
+      fill: { color: C.separator } });
     s.addText(o.note, { x: ox + 0.25, y: 4.4, w: 4.1, h: 0.48,
       fontFace: F.sans, fontSize: 9, italic: true, color: C.red, margin: 0 });
   });
@@ -537,12 +659,12 @@ function slide08_ProblemStatement(pres) {
 
   s.addText("IRL events & community management\nare the most effective way\nto get to a billion+ Indians.", {
     x: 0.8, y: 1.0, w: 8.8, h: 1.95,
-    fontFace: F.serif, fontSize: 34, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 34, italic: true, color: C.onDark,
     align: "left", margin: 0,
   });
 
   s.addShape("rect", { x: 0.8, y: 3.05, w: 8.8, h: 0.055,
-    fill: { color: "333333" } });
+    fill: { color: C.separator } });
 
   s.addText("But Bitcoin products and services lack the\nexecution & operations muscle to actualise it.", {
     x: 0.8, y: 3.2, w: 8.8, h: 1.0,
@@ -560,28 +682,28 @@ function slide09_Cover(pres) {
   var s = pres.addSlide();
   s.background = { color: C.black };
   s.addShape("rect", { x: 0, y: 0, w: 10, h: 0.07, fill: { color: C.orange } });
-  s.addShape("rect", { x: 7.4, y: 0.07, w: 2.6, h: 5.2, fill: { color: "1C1208" } });
+  s.addShape("rect", { x: 7.4, y: 0.07, w: 2.6, h: 5.2, fill: { color: C.darkPanel } });
   s.addText("Bitcoincierge", {
     x: 0.5, y: 0.7, w: 7.0, h: 1.2,
-    fontFace: F.serif, fontSize: 68, italic: true, color: C.white, align: "left", margin: 0,
+    fontFace: F.serif, fontSize: 68, italic: true, color: C.onDark, align: "left", margin: 0,
   });
   s.addShape("rect", { x: 0.5, y: 1.85, w: 2.5, h: 0.055, fill: { color: C.orange } });
   s.addText("IRL Event and Community Management.\nFor Bitcoin brands. In India.", {
     x: 0.5, y: 2.05, w: 6.7, h: 0.9,
-    fontFace: F.sans, fontSize: 18, color: C.white, align: "left", margin: 0,
+    fontFace: F.sans, fontSize: 18, color: C.onDark, align: "left", margin: 0,
   });
   s.addText("D e m o s .   W o r k s h o p s .   M e e t u p s .", {
     x: 0.5, y: 3.15, w: 6.5, h: 0.4,
     fontFace: F.sans, fontSize: 11.5, bold: true, color: C.orange, align: "left", margin: 0,
   });
-  s.addShape("rect", { x: 0, y: 5.2, w: 10, h: 0.43, fill: { color: "0D0D0D" } });
+  s.addShape("rect", { x: 0, y: 5.2, w: 10, h: 0.43, fill: { color: C.black } });
   s.addText("SofB Accelerator Pitch", {
     x: 0.5, y: 5.22, w: 6, h: 0.3,
-    fontFace: F.sans, fontSize: 9, color: "888888", align: "left", margin: 0,
+    fontFace: F.sans, fontSize: 9, color: C.gray500, align: "left", margin: 0,
   });
   s.addText("2026", {
     x: 0.5, y: 5.22, w: 9, h: 0.3,
-    fontFace: F.sans, fontSize: 9, color: "888888", align: "right", margin: 0,
+    fontFace: F.sans, fontSize: 9, color: C.gray500, align: "right", margin: 0,
   });
 }
 
@@ -598,7 +720,7 @@ function slide10_Solution(pres) {
   s.addShape("rect", { x: 0.5, y: 1.92, w: 9.0, h: 0.72, fill: { color: C.orange } });
   s.addText("Plug in on Day 1. Demo, acquire, and activate users — without building a team, traveling, or starting a community from zero.", {
     x: 0.7, y: 1.95, w: 8.6, h: 0.66,
-    fontFace: F.serif, fontSize: 12.5, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 12.5, italic: true, color: C.onDark,
     align: "center", valign: "middle", margin: 0,
   });
 
@@ -643,7 +765,7 @@ function slide11_WhyNow(pres) {
       fill: { color: C.white }, line: { color: "E5E7EB", width: 0.75 }, shadow: makeShadow() });
     s.addShape("rect", { x: cx + 0.2, y: 1.75, w: 0.52, h: 0.52, fill: { color: C.orange } });
     s.addText(c.num, { x: cx + 0.2, y: 1.75, w: 0.52, h: 0.52,
-      fontFace: F.sans, fontSize: 15, bold: true, color: C.white,
+      fontFace: F.sans, fontSize: 15, bold: true, color: C.onDark,
       align: "center", valign: "middle", margin: 0 });
     s.addText(c.head, { x: cx + 0.2, y: 2.4, w: 4.2, h: 0.65,
       fontFace: F.sans, fontSize: 11, bold: true, color: C.gray900, margin: 0 });
@@ -708,7 +830,7 @@ function slide13_AIFatigue(pres) {
 
   // Left half: ONLINE WORLD (blue glow panel)
   s.addShape("rect", { x: 0, y: 0, w: 4.8, h: 5.625,
-    fill: { color: "050A14" } });
+    fill: { color: C.darkPanel } });
   s.addShape("rect", { x: 0, y: 0, w: 4.8, h: 0.07,
     fill: { color: "1D4ED8" } });
 
@@ -746,12 +868,12 @@ function slide13_AIFatigue(pres) {
   });
   s.addText("The pendulum is swinging\nback offline.", {
     x: 5.1, y: 3.05, w: 4.5, h: 0.85,
-    fontFace: F.serif, fontSize: 18, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 18, italic: true, color: C.onDark,
     margin: 0,
   });
   s.addText("People want to meet in person. They want to hold the hardware. They want to feel the experience — not scroll past another post about it.", {
     x: 5.1, y: 4.0, w: 4.5, h: 1.08,
-    fontFace: F.sans, fontSize: 9.5, color: "AAAAAA", margin: 0,
+    fontFace: F.sans, fontSize: 9.5, color: C.gray500, margin: 0,
   });
 }
 
@@ -980,7 +1102,7 @@ function slide17_ProofOfWork(pres) {
     var cx = scaledX(coord.x);
     var cy = scaledY(coord.y);
     s.addShape("oval", { x: cx - 0.1, y: cy - 0.1, w: 0.2, h: 0.2,
-      fill: { color: "DDDDDD" }, line: { color: "AAAAAA", width: 1 } });
+      fill: { color: "DDDDDD" }, line: { color: C.gray500, width: 1 } });
   });
 
   addLightFooter(s);
@@ -997,7 +1119,7 @@ function slide18_Ask(pres) {
 
   s.addText("Let's do IRL event and\nactivation for your brand.", {
     x: 0.5, y: 0.52, w: 9, h: 1.6,
-    fontFace: F.serif, fontSize: 38, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 38, italic: true, color: C.onDark,
     align: "left", margin: 0,
   });
 
@@ -1010,14 +1132,14 @@ function slide18_Ask(pres) {
   asks.forEach(function(a, i) {
     var ay = 2.35 + i * 0.98;
     s.addShape("rect", { x: 0.5, y: ay, w: 9.0, h: 0.82,
-      fill: { color: "1A1A1A" }, line: { color: "2A2A2A", width: 0.75 } });
+      fill: { color: C.darkPanel }, line: { color: C.panelBorder, width: 0.75 } });
     s.addShape("rect", { x: 0.5, y: ay, w: 0.055, h: 0.82, fill: { color: C.orange } });
     s.addText(a.emoji, { x: 0.65, y: ay + 0.17, w: 0.55, h: 0.5,
       fontFace: F.sans, fontSize: 20, margin: 0 });
     s.addText(a.step, { x: 1.35, y: ay + 0.1, w: 3.0, h: 0.35,
-      fontFace: F.sans, fontSize: 12, bold: true, color: C.white, margin: 0 });
+      fontFace: F.sans, fontSize: 12, bold: true, color: C.onDark, margin: 0 });
     s.addText(a.sub, { x: 1.35, y: ay + 0.45, w: 7.9, h: 0.3,
-      fontFace: F.sans, fontSize: 9.5, color: "999999", margin: 0 });
+      fontFace: F.sans, fontSize: 9.5, color: C.gray500, margin: 0 });
   });
 
   addDarkFooter(s);
@@ -1033,13 +1155,13 @@ function slide19_QandA(pres) {
 
   s.addText("Q & A", {
     x: 0.5, y: 1.5, w: 9, h: 1.8,
-    fontFace: F.serif, fontSize: 96, italic: true, color: C.white,
+    fontFace: F.serif, fontSize: 96, italic: true, color: C.onDark,
     align: "center", margin: 0,
   });
 
   s.addText("Watch our 2-minute explainer 👆  then ask us anything.", {
     x: 0.5, y: 3.55, w: 9, h: 0.5,
-    fontFace: F.sans, fontSize: 14, color: "777777", italic: true,
+    fontFace: F.sans, fontSize: 14, color: C.gray700, italic: true,
     align: "center", margin: 0,
   });
 
@@ -1083,5 +1205,6 @@ async function buildDeck(outputPath) {
   return outFile;
 }
 
-module.exports = { buildDeck };
+module.exports = { buildDeck, THEMES };
 if (require.main === module) { buildDeck().catch(function(e){ console.error(e); process.exit(1); }); }
+
