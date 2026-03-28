@@ -1,0 +1,21 @@
+{
+  "name": "bitcoincierge-pitch-deck",
+  "version": "1.0.0",
+  "description": "Bitcoincierge Pitch Deck — Week 11 · SofB Accelerator 2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node src/deck.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "express": "^4.18.2",
+    "pptxgenjs": "^3.12.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.12.0",
+    "sharp": "^0.33.2",
+    "ws": "^8.16.0"
+  }
+}
