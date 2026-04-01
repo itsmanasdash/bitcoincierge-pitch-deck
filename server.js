@@ -102,7 +102,7 @@ chokidar.watch(path.join(__dirname, "src", "deck.js"), { ignoreInitial: false })
 
 app.use("/slides", express.static(SLIDES_DIR));
 app.use("/output", express.static(OUTPUT_DIR));
-app.use("/website-assets", express.static(path.join(__dirname, "..", "btcierge", "public")));
+app.use("/website-assets", express.static(path.join(__dirname, "assets", "website-assets")));
 
 // ── Theme switcher API ────────────────────────────────────────────────────────
 app.post("/set-theme", (req, res) => {
