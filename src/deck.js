@@ -236,17 +236,17 @@ function placeMapDot(s, city, color, dotSize, label) {
   var c = MAP.cities[city];
   if (!c) return;
   var ds = dotSize || 0.18;
-  s.addShape("oval", {
-    x: c.x, y: c.y, w: ds, h: ds,
-    fill: { color: color },
-    line: { color: C.white, width: 1.5 },
+  s.addText("●", {
+    x: c.x, y: c.y - 0.02, w: ds, h: ds + 0.04,
+    fontFace: F.sans, fontSize: 18, color: color,
+    align: "center", valign: "middle", margin: 0,
   });
   if (label) {
     var lx = c.labelDir === "right" ? c.x + ds + 0.05 : c.x - 1.1;
     var align = c.labelDir === "right" ? "left" : "right";
     s.addText(label, {
       x: lx, y: c.y + 0.01, w: 1.05, h: 0.2,
-      fontFace: F.sans, fontSize: 8, bold: true, color: C.black,
+      fontFace: F.sans, fontSize: 8, bold: true, color: C.gray900,
       align: align, margin: 0,
     });
   }
@@ -1043,15 +1043,6 @@ function slide17_ProofOfWork(pres) {
     { brand: "Zebpay",    color: C.teal,    cities: ["Mumbai","Delhi"] },
   ];
 
-  // Group brands by city for stacked dots
-  var cityBrands = {};
-  brandCities.forEach(function(bc) {
-    bc.cities.forEach(function(city) {
-      if (!cityBrands[city]) cityBrands[city] = [];
-      cityBrands[city].push({ brand: bc.brand, color: bc.color });
-    });
-  });
-
   // City base positions from original XML
   var cityCoords = {
     Delhi:     { x: 4.408, y: 1.700 },
@@ -1063,49 +1054,48 @@ function slide17_ProofOfWork(pres) {
     Chennai:   { x: 4.872, y: 4.721 },
   };
 
-  Object.keys(cityBrands).forEach(function(city) {
+  var activeCities = ["Delhi","Ahmedabad","Mumbai","Goa","Hyderabad","Bangalore","Chennai"];
+  activeCities.forEach(function(city) {
     var coord = cityCoords[city];
-    if (!coord) return;
     var cx = scaledX(coord.x);
     var cy = scaledY(coord.y);
-    var list = cityBrands[city];
-    var dotSize = 0.26;
-    var gap = 0.08;
-    var totalW = list.length * (dotSize + gap) - gap;
-    var startX = cx - totalW / 2;
+    var dotSize = 0.22;
 
-    // Colored dots side by side — no shadow (LibreOffice shadow+oval issue)
-    list.forEach(function(item, j) {
-      var dx = startX + j * (dotSize + gap);
-      var dy = cy - dotSize / 2;
-      // White border circle behind
-      s.addShape("oval", { x: dx - 0.03, y: dy - 0.03, w: dotSize + 0.06, h: dotSize + 0.06,
-        fill: { color: C.white }, line: { color: C.white, width: 0 } });
-      // Colored dot
-      s.addShape("oval", { x: dx, y: dy, w: dotSize, h: dotSize,
-        fill: { color: item.color }, line: { color: C.white, width: 0 } });
-    });
+    // Single orange dot per city as requested using text character to bypass LibreOffice bug
+    s.addText("●", { x: cx, y: cy - 0.02, w: dotSize, h: dotSize + 0.04,
+      fontFace: F.sans, fontSize: 24, color: C.orange,
+      align: "center", valign: "middle", margin: 0 });
 
     // City label
     var labelDir = ["Delhi","Hyderabad","Bangalore","Chennai"].indexOf(city) >= 0 ? "right" : "left";
-    var lx = labelDir === "right" ? cx + dotSize / 2 + 0.08 : cx - 1.2;
+    var lx = labelDir === "right" ? cx + dotSize + 0.05 : cx - 1.15;
     var align = labelDir === "right" ? "left" : "right";
-    s.addText(city, { x: lx, y: cy + dotSize / 2 + 0.03, w: 1.15, h: 0.2,
-      fontFace: F.sans, fontSize: 8.5, bold: true, color: C.black,
+    s.addText(city, { x: lx, y: cy + 0.03, w: 1.1, h: 0.2,
+      fontFace: F.sans, fontSize: 8.5, bold: true, color: C.gray900,
       align: align, margin: 0 });
   });
 
-  // Gray outline dots for cities we cover but have no brands yet
-  ["Hyderabad","Ahmedabad","Chennai"].forEach(function(city) {
-    if (cityBrands[city]) return;
-    var coord = cityCoords[city];
-    var cx = scaledX(coord.x);
-    var cy = scaledY(coord.y);
-    s.addShape("oval", { x: cx - 0.1, y: cy - 0.1, w: 0.2, h: 0.2,
-      fill: { color: "DDDDDD" }, line: { color: C.gray500, width: 1 } });
-  });
-
   addLightFooter(s);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SLIDE 19a-f — Company Profiles
+// ─────────────────────────────────────────────────────────────────────────────
+function slide_CompanyProfile(pres, company) {
+  var s = pres.addSlide();
+  s.background = { color: C.black };
+  s.addShape("rect", { x: 0, y: 0, w: 10, h: 0.07, fill: { color: C.orange } });
+  s.addText(company.name, {
+    x: 0.5, y: 2.0, w: 5, h: 1.0,
+    fontFace: F.serif, fontSize: 56, italic: true, color: C.onDark,
+    align: "left", margin: 0,
+  });
+  s.addText(company.nowText || "", {
+    x: 0.5, y: 3.2, w: 4.8, h: 2,
+    fontFace: F.sans, fontSize: 18, color: C.gray500,
+    align: "left", margin: 0,
+  });
+  addDarkFooter(s);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1114,34 +1104,8 @@ function slide17_ProofOfWork(pres) {
 function slide18_Ask(pres) {
   var s = pres.addSlide();
   s.background = { color: C.black };
-  s.addShape("rect", { x: 0, y: 0, w: 10, h: 0.07, fill: { color: C.orange } });
-  addLabel(s, "T h e   A s k");
-
-  s.addText("Let's do IRL event and\nactivation for your brand.", {
-    x: 0.5, y: 0.52, w: 9, h: 1.6,
-    fontFace: F.serif, fontSize: 38, italic: true, color: C.onDark,
-    align: "left", margin: 0,
-  });
-
-  var asks = [
-    { emoji: "📍", step: "Select a city",          sub: "Pick any of our 7 active cities. We know the community, the venue, the right audience." },
-    { emoji: "🤝", step: "Select a mentor",         sub: "Browse our Bitcoin mentor network or recommend your own. We brief, manage, and pay them." },
-    { emoji: "🌐", step: "Get your first activation", sub: "Pilot event — fixed fee only. We handle everything. You show up and demo your product." },
-  ];
-
-  asks.forEach(function(a, i) {
-    var ay = 2.35 + i * 0.98;
-    s.addShape("rect", { x: 0.5, y: ay, w: 9.0, h: 0.82,
-      fill: { color: C.darkPanel }, line: { color: C.panelBorder, width: 0.75 } });
-    s.addShape("rect", { x: 0.5, y: ay, w: 0.055, h: 0.82, fill: { color: C.orange } });
-    s.addText(a.emoji, { x: 0.65, y: ay + 0.17, w: 0.55, h: 0.5,
-      fontFace: F.sans, fontSize: 20, margin: 0 });
-    s.addText(a.step, { x: 1.35, y: ay + 0.1, w: 3.0, h: 0.35,
-      fontFace: F.sans, fontSize: 12, bold: true, color: C.onDark, margin: 0 });
-    s.addText(a.sub, { x: 1.35, y: ay + 0.45, w: 7.9, h: 0.3,
-      fontFace: F.sans, fontSize: 9.5, color: C.gray500, margin: 0 });
-  });
-
+  // Blank slide - the server will overlay the Hero video and text
+  s.addShape("rect", { x: 0, y: 0, w: 10, h: 5.625, fill: { type: "solid", color: "000000" } });
   addDarkFooter(s);
 }
 
@@ -1197,6 +1161,17 @@ async function buildDeck(outputPath) {
   slide15_GTM(pres);
   slide16_BusinessModel(pres);
   slide17_ProofOfWork(pres);
+
+  const companies = [
+    { name: "Getbit",    nowText: "Bitcoin-only exchange from India. 200+ attendees across meetups powered by Bitcoincierge." },
+    { name: "Zebpay",    nowText: "India's leading crypto exchange. Hosted meetups across Mumbai and Delhi, reaching hundreds of attendees." },
+    { name: "Jetking",   nowText: "Reached thousands through in-person meetups and online streams, spreading their Bitcoin treasury story to potential investors." },
+    { name: "Ourpool",   nowText: "3 meetups across Bangalore, Mumbai, and Delhi. Partners and ecosystem providers onboarded to their Bitcoin Mining Academy in Goa, culminating in a paid 30+ attendee cohort." },
+    { name: "Bitasha",   nowText: "Piloted hardware meetups for beta testing. Sold 50+ BitAxe units through meetup and event activations alone." },
+    { name: "Cryobrick", nowText: "First user activation through meetups in Goa. Onboarded senior Bitcoiners as beta testers for v1 of the app." },
+  ];
+  companies.forEach(function(c) { slide_CompanyProfile(pres, c); });
+
   slide18_Ask(pres);
   slide19_QandA(pres);
 

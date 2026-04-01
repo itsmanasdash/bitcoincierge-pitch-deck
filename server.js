@@ -102,6 +102,7 @@ chokidar.watch(path.join(__dirname, "src", "deck.js"), { ignoreInitial: false })
 
 app.use("/slides", express.static(SLIDES_DIR));
 app.use("/output", express.static(OUTPUT_DIR));
+app.use("/website-assets", express.static(path.join(__dirname, "..", "btcierge", "public")));
 
 // ── Theme switcher API ────────────────────────────────────────────────────────
 app.post("/set-theme", (req, res) => {
@@ -211,6 +212,14 @@ body{background:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',san
   transition:transform .3s ease;pointer-events:none;
 }
 #toast.show{transform:translateX(-50%) translateY(0)}
+/* ── Presentation Mode ── */
+#pres-overlay {
+  display:none;position:fixed;inset:0;background:#000;z-index:9999;
+  align-items:center;justify-content:center;user-select:none;
+}
+#pres-overlay.active { display:flex; cursor:none; }
+#pres-overlay.active.show-cursor { cursor:default; }
+#pres-img { width:100vw; height:100vh; object-fit:fill; }
 </style>
 </head>
 <body>
@@ -222,12 +231,40 @@ body{background:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',san
   <div class="spacer"></div>
   <div class="actions">
     <span class="status" id="st">● Live</span>
+    <button id="startPresBtn" class="btn primary" style="display:none; background:#10B981" onclick="startPresentation()">▶ Start Presentation</button>
     <a href="/output/bitcoincierge_pitch_deck.pptx" download class="btn secondary">⬇ PPTX</a>
     <a href="/output/bitcoincierge_pitch_deck.pdf"  download class="btn secondary">⬇ PDF</a>
     <button class="btn primary" onclick="location.reload()">↺ Refresh</button>
   </div>
 </div>
 
+<div id="pres-overlay">
+  <img id="pres-img" src="" alt="Slide" />
+  <div id="interactive-overlay" style="display:none;position:absolute;inset:0;background:transparent;align-items:center;justify-content:flex-end;padding-right:5%;z-index:10001;pointer-events:none;">
+    <div id="carousel-card" style="position:relative;width:28vw;min-width:320px;max-width:440px;height:72vh;background:#000;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);">
+      <div id="carousel-bars" style="position:absolute;top:16px;left:16px;right:16px;display:flex;gap:4px;z-index:20;"></div>
+      <img id="carousel-img" src="" style="width:100%;height:100%;object-fit:contain;background:#000;" />
+      <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);padding:24px;padding-top:60px;z-index:20;">
+        <h2 id="carousel-title" style="display:none;"></h2>
+        <p id="carousel-text" style="color:#fff;font-family:Georgia,serif;font-style:italic;font-size:20px;line-height:1.4;margin:0;text-shadow:0 2px 8px rgba(0,0,0,0.9);"></p>
+      </div>
+    </div>
+  </div>
+  <div id="hero-overlay" style="display:none;position:absolute;inset:0;background:#000;z-index:9500;align-items:center;justify-content:center;overflow:hidden;pointer-events:none;">
+    <video id="hero-video" muted loop playsinline poster="/website-assets/images/defaultMentor.webp" src="/website-assets/Hero.mp4" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;filter:blur(3px) brightness(0.6);transform:scale(1.1);"></video>
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.2);z-index:1;"></div>
+    
+    <div style="position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;height:100%;padding:0 8%;gap:40px;">
+      <h1 style="color:#fff;font-family:serif;font-size:80px;line-height:1.2;margin:0;font-weight:normal;letter-spacing:-0.01em;text-shadow:0 0 40px rgba(0,0,0,0.5);">
+        Bring Your Bitcoin Brand<br/>
+        <em style="font-style:italic;">in Front of a Billion+ Indians</em>
+      </h1>
+      <p style="color:rgba(255,255,255,0.9);font-family:serif;font-style:italic;font-size:30px;line-height:1.5;margin:0 auto;max-width:960px;text-shadow:0 4px 12px rgba(0,0,0,0.9);">
+        The end-to-end concierge for Bitcoin brands — meetups, workshops, and brand-led activations across India &amp; Southeast Asia.
+      </p>
+    </div>
+  </div>
+</div>
 <div id="overlay"><div class="spinner"></div><div class="overlay-msg">Rebuilding with new theme…</div></div>
 <div id="toast"></div>
 <div class="main">${slideHTML}</div>
@@ -244,6 +281,195 @@ ws.onmessage=e=>{const m=JSON.parse(e.data);
 ws.onclose=()=>{st.textContent="● Disconnected";st.className="status error";};
 
 // ── Theme palette buttons ──────────────────────────────────────────────────
+// ── Presentation mode & Carousel ───────────────────────────────────────────
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  document.getElementById("startPresBtn").style.display = "inline-flex";
+}
+
+const COMPANY_DATA = [
+  { name: "Getbit", storyTexts: ["Bitcoin-only exchange from India.","Workshops on buying Bitcoin into self-custody.","200+ attendees across meetups powered by Bitcoincierge."], images: ["/website-assets/images/getbit/getbit-1.jpeg", "/website-assets/images/getbit/getbit-2.jpeg", "/website-assets/images/getbit/getbit-3.jpeg"] },
+  { name: "Zebpay", storyTexts: ["India's leading crypto exchange.","Hosted meetups across Mumbai and Delhi.","Reaching hundreds of attendees."], images: ["/website-assets/images/zebpay/zebpay-1.jpeg", "/website-assets/images/zebpay/zebpay-2.jpeg", "/website-assets/images/zebpay/zebpay-3.jpeg"] },
+  { name: "Jetking", storyTexts: ["Reached thousands through in-person meetups and online streams.","Spreading their Bitcoin treasury story to potential investors."], images: ["/website-assets/images/jetking/jetking-1.jpeg", "/website-assets/images/jetking/jetking-2.jpeg"] },
+  { name: "Ourpool", storyTexts: ["3 meetups across Bangalore, Mumbai, and Delhi.","Partners onboarded to their Bitcoin Mining Academy.","Paid 30+ attendee mining cohort in Goa."], images: ["/website-assets/images/ourpool/ourpool-1.jpeg", "/website-assets/images/ourpool/ourpool-2.jpeg", "/website-assets/images/ourpool/ourpool-3.jpeg"] },
+  { name: "Bitasha", storyTexts: ["Sold 50+ BitAxe units through meetup and event activations alone."], images: ["/website-assets/images/bitasha1.jpeg", "/website-assets/images/bitasha2.jpeg"] },
+  { name: "Cryobrick", storyTexts: ["First user activation through meetups in Goa.","Senior Bitcoiners onboarded as beta testers for v1 of the app."], images: ["/website-assets/images/cryobrick/cryobrick-1.jpeg", "/website-assets/images/cryobrick/cryobrick-2.jpeg"] }
+];
+
+let presIndex = 0;
+let presSlides = [];
+let intraSlideIndex = 0;
+let carouselInterval;
+
+function updateCarousel() {
+  const cData = COMPANY_DATA[presIndex - 19];
+  if (!cData) return;
+  document.getElementById("carousel-img").src = cData.images[intraSlideIndex];
+  document.getElementById("carousel-title").textContent = cData.name;
+  document.getElementById("carousel-text").textContent = cData.storyTexts[intraSlideIndex] || cData.storyTexts[0];
+  
+  const bars = document.getElementById("carousel-bars");
+  bars.innerHTML = "";
+  cData.images.forEach((_, i) => {
+    const bar = document.createElement("div");
+    bar.style.flex = "1";
+    bar.style.height = "4px";
+    bar.style.background = "rgba(255,255,255,0.3)";
+    bar.style.borderRadius = "2px";
+    bar.style.overflow = "hidden";
+    const fill = document.createElement("div");
+    fill.style.height = "100%";
+    fill.style.background = "#fff";
+    if (i < intraSlideIndex) fill.style.width = "100%";
+    else if (i === intraSlideIndex) {
+      fill.style.width = "0%";
+      fill.style.transition = "width 2.5s linear";
+      setTimeout(() => { fill.style.width = "100%"; }, 50);
+    } else {
+      fill.style.width = "0%";
+    }
+    bar.appendChild(fill);
+    bars.appendChild(bar);
+  });
+}
+
+function continueCarousel() {
+  clearInterval(carouselInterval);
+  carouselInterval = setInterval(() => {
+    const cData = COMPANY_DATA[presIndex - 19];
+    if (intraSlideIndex < cData.images.length - 1) {
+      intraSlideIndex++;
+      updateCarousel();
+    } else {
+      presIndex = Math.min(presIndex + 1, presSlides.length - 1);
+      renderSlide();
+    }
+  }, 2500);
+}
+
+function renderSlide() {
+  document.getElementById("pres-img").src = presSlides[presIndex];
+  
+  if (presIndex >= 19 && presIndex <= 24) {
+    document.getElementById("interactive-overlay").style.display = "flex";
+    intraSlideIndex = 0;
+    updateCarousel();
+    continueCarousel();
+  } else {
+    document.getElementById("interactive-overlay").style.display = "none";
+    clearInterval(carouselInterval);
+  }
+
+  if (presIndex === 25) {
+    document.getElementById("hero-overlay").style.display = "flex";
+    const v = document.getElementById("hero-video");
+    v.currentTime = 0;
+    v.play().catch(()=>{});
+  } else {
+    document.getElementById("hero-overlay").style.display = "none";
+    document.getElementById("hero-video").pause();
+  }
+}
+
+function startPresentation() {
+  const slides = document.querySelectorAll(".slide-wrap img");
+  if (!slides.length) return showToast("No slides available");
+  presSlides = Array.from(slides).map(img => img.src);
+  presIndex = 0;
+  
+  const overlay = document.getElementById("pres-overlay");
+  overlay.style.backgroundColor = "#000";
+  overlay.classList.add("active");
+  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+  renderSlide();
+}
+
+function exitPresentation() {
+  document.getElementById("pres-overlay").classList.remove("active");
+  clearInterval(carouselInterval);
+  document.getElementById("hero-video").pause();
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+}
+
+document.addEventListener("keydown", (e) => {
+  const overlay = document.getElementById("pres-overlay");
+  if (!overlay.classList.contains("active")) return;
+  if (e.key === "Escape") return exitPresentation();
+  
+  if (presIndex >= 19 && presIndex <= 24) {
+    const cData = COMPANY_DATA[presIndex - 19];
+    if (e.key === "ArrowRight" || e.key === "Space" || e.key === "Enter") {
+      if (intraSlideIndex < cData.images.length - 1) {
+        intraSlideIndex++;
+        updateCarousel();
+        continueCarousel();
+        return;
+      }
+    } else if (e.key === "ArrowLeft") {
+      if (intraSlideIndex > 0) {
+        intraSlideIndex--;
+        updateCarousel();
+        continueCarousel();
+        return;
+      }
+    }
+  }
+
+  if (e.key === "ArrowRight" || e.key === "Space" || e.key === "Enter") {
+    presIndex = Math.min(presIndex + 1, presSlides.length - 1);
+    renderSlide();
+  } else if (e.key === "ArrowLeft") {
+    presIndex = Math.max(presIndex - 1, 0);
+    renderSlide();
+  }
+});
+
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement) exitPresentation();
+});
+
+let hideCursorTimeout;
+const prOverlay = document.getElementById("pres-overlay");
+prOverlay.addEventListener("click", (e) => {
+  if (presIndex >= 19 && presIndex <= 24) {
+    const cData = COMPANY_DATA[presIndex - 19];
+    if (e.clientX > window.innerWidth / 2) {
+      if (intraSlideIndex < cData.images.length - 1) {
+        intraSlideIndex++;
+        updateCarousel();
+        continueCarousel();
+      } else {
+        presIndex = Math.min(presIndex + 1, presSlides.length - 1);
+        renderSlide();
+      }
+    } else {
+      if (intraSlideIndex > 0) {
+        intraSlideIndex--;
+        updateCarousel();
+        continueCarousel();
+      } else {
+        presIndex = Math.max(presIndex - 1, 0);
+        renderSlide();
+      }
+    }
+    return;
+  }
+
+  if (e.clientX > window.innerWidth / 2) {
+    presIndex = Math.min(presIndex + 1, presSlides.length - 1);
+  } else {
+    presIndex = Math.max(presIndex - 1, 0);
+  }
+  renderSlide();
+});
+
+prOverlay.addEventListener("mousemove", () => {
+  prOverlay.classList.add("show-cursor");
+  clearTimeout(hideCursorTimeout);
+  hideCursorTimeout = setTimeout(() => {
+    prOverlay.classList.remove("show-cursor");
+  }, 2000);
+});
+
 const THEME_META = {
   "dark-bitcoin": { label:"Dark Bitcoin", bg:"#111",    fg:"#F26522", dot:"#F26522" },
   "white-orange":{ label:"White & Orange",bg:"#FFF7F0", fg:"#F26522", dot:"#F26522" },
