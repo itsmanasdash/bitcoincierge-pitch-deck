@@ -301,7 +301,7 @@ let intraSlideIndex = 0;
 let carouselInterval;
 
 function updateCarousel() {
-  const cData = COMPANY_DATA[presIndex - 19];
+  const cData = COMPANY_DATA[presIndex - 16];
   if (!cData) return;
   document.getElementById("carousel-img").src = cData.images[intraSlideIndex];
   document.getElementById("carousel-title").textContent = cData.name;
@@ -335,7 +335,7 @@ function updateCarousel() {
 function continueCarousel() {
   clearInterval(carouselInterval);
   carouselInterval = setInterval(() => {
-    const cData = COMPANY_DATA[presIndex - 19];
+    const cData = COMPANY_DATA[presIndex - 16];
     if (intraSlideIndex < cData.images.length - 1) {
       intraSlideIndex++;
       updateCarousel();
@@ -349,7 +349,7 @@ function continueCarousel() {
 function renderSlide() {
   document.getElementById("pres-img").src = presSlides[presIndex];
   
-  if (presIndex >= 19 && presIndex <= 24) {
+  if (presIndex >= 16 && presIndex <= 21) {
     document.getElementById("interactive-overlay").style.display = "flex";
     intraSlideIndex = 0;
     updateCarousel();
@@ -359,7 +359,7 @@ function renderSlide() {
     clearInterval(carouselInterval);
   }
 
-  if (presIndex === 25) {
+  if (presIndex === 22) {
     document.getElementById("hero-overlay").style.display = "flex";
     const v = document.getElementById("hero-video");
     v.currentTime = 0;
@@ -395,8 +395,8 @@ document.addEventListener("keydown", (e) => {
   if (!overlay.classList.contains("active")) return;
   if (e.key === "Escape") return exitPresentation();
   
-  if (presIndex >= 19 && presIndex <= 24) {
-    const cData = COMPANY_DATA[presIndex - 19];
+  if (presIndex >= 16 && presIndex <= 21) {
+    const cData = COMPANY_DATA[presIndex - 16];
     if (e.key === "ArrowRight" || e.key === "Space" || e.key === "Enter") {
       if (intraSlideIndex < cData.images.length - 1) {
         intraSlideIndex++;
@@ -430,8 +430,8 @@ document.addEventListener("fullscreenchange", () => {
 let hideCursorTimeout;
 const prOverlay = document.getElementById("pres-overlay");
 prOverlay.addEventListener("click", (e) => {
-  if (presIndex >= 19 && presIndex <= 24) {
-    const cData = COMPANY_DATA[presIndex - 19];
+  if (presIndex >= 16 && presIndex <= 21) {
+    const cData = COMPANY_DATA[presIndex - 16];
     if (e.clientX > window.innerWidth / 2) {
       if (intraSlideIndex < cData.images.length - 1) {
         intraSlideIndex++;
