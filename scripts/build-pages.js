@@ -1,0 +1,77 @@
+const fs = require("fs");
+const path = require("path");
+const { buildDeck } = require("../src/deck");
+
+async function buildPages() {
+  const docsDir = path.join(__dirname, "..", "docs");
+  const outputDir = path.join(docsDir, "output");
+  const pptxFile = path.join(outputDir, "bitcoincierge_pitch_deck.pptx");
+
+  fs.mkdirSync(outputDir, { recursive: true });
+
+  await buildDeck(pptxFile);
+
+  const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bitcoincierge Pitch Deck</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #111;
+        color: #eee;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .card {
+        width: min(680px, 92vw);
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 14px;
+        padding: 28px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        color: #f26522;
+        font-size: 28px;
+      }
+      p {
+        margin: 0 0 18px;
+        color: #c8c8c8;
+      }
+      a.btn {
+        display: inline-block;
+        text-decoration: none;
+        background: #f26522;
+        color: #fff;
+        font-weight: 700;
+        padding: 10px 14px;
+        border-radius: 8px;
+      }
+      small { color: #888; display: block; margin-top: 14px; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>Bitcoincierge Pitch Deck</h1>
+      <p>Download the latest generated presentation file.</p>
+      <a class="btn" href="./output/bitcoincierge_pitch_deck.pptx" download>Download PPTX</a>
+      <small>Built automatically via GitHub Actions + GitHub Pages.</small>
+    </main>
+  </body>
+</html>
+`;
+
+  fs.writeFileSync(path.join(docsDir, "index.html"), html);
+  fs.writeFileSync(path.join(docsDir, ".nojekyll"), "");
+}
+
+buildPages().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
